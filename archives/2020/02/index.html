@@ -59,8 +59,8 @@
         <div class="post-meta">
             <span class="post-time">February 24, 2020</span>
         </div>
-        <div class="post-content">
-            <p>前两天给 Ice 加了 call/cc, 为此还重构了一波, 实现 call/cc 还是因为看了轮子哥的大专系列(</p>
+        <div class="post-pre">
+            <p>前两天给 Ice 加了 call/cc, 为此还重构了一波, 实现 call/cc 还是因为看了轮子哥的大专系列（</p>
 <p>里边说提供 continuation 语言实现 Coroutine 起来很轻松, 后来又查了一些资料, 都说 continuation 表达能力很强, 就实现了一手, 调用方式完全等同 call/cc, 既然是看 Coroutine 才要实现 call/cc, 那实现了之后当然要用 call/cc 实现一手 Coroutine 了(</p>
 <p>不过这个 Coroutine 比较简陋, 只提供 create, resume, yield, destroy</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">coroutine: (@() &#123;<br>    @funcs: [];<br>    @conts: [];<br>    @deletes: [];<br>    @co_cont: none;<br><br>    @create(func) &#123;<br>        if deletes.empty() &#123;<br>            @id: funcs.size();<br>            funcs.push(func);<br>            conts.push(none);<br>            return id;<br>        &#125; else &#123;<br>            @id: deletes.pop();<br>            funcs[id]: func;<br>            conts[id]: none;<br>            return id;<br>        &#125;<br>    &#125;<br><br>    @resume(id) &#123;<br>        if conts[id] = none &#123;<br>            conts[id]: call_with_current_continuation(@(cont) &#123;<br>                co_cont: cont;<br>                funcs[id]();<br>            &#125;);<br>        &#125; else &#123;<br>            conts[id]: call_with_current_continuation(@(cont) &#123;<br>                co_cont: cont;<br>                conts[id](none);<br>            &#125;);<br>        &#125;<br>    &#125;<br><br>    @yield() &#123;<br>        call_with_current_continuation(co_cont);<br>    &#125;<br><br>    @destroy(id) &#123;<br>        funcs[id]: conts[id]: none;<br>        deletes.push(id);<br>    &#125;<br><br>    return @() &#123;&#125;;<br>&#125;)();<br></code></pre></td></tr></table></figure>
@@ -72,6 +72,8 @@
 <p>可惜除了 vsc 都没有 Ice 的高亮(</p>
 
         </div>
+        <p>
+        <a class="post-title-link" href="/2020/02/24/%E9%80%9A%E8%BF%87%20call-cc%20%E7%BB%99%20Ice%20%E5%AE%9E%E7%8E%B0%20Coroutine/" style="text-decoration: none;">Read more --></a>
     </article>
     
 </section>

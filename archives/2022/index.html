@@ -59,9 +59,8 @@
         <div class="post-meta">
             <span class="post-time">February 17, 2022</span>
         </div>
-        <div class="post-content">
+        <div class="post-pre">
             <p>程序在运行时需要请求操作系统分配内存以及释放内存，因此，程序员在编写程序时，需要显式（手动）地编写分配和释放内存的代码，或者隐式（自动，由语言保证）地进行内存管理。对于前者，C/C++ 是代表语言，程序员需要手动管理内存；对于后者，<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Garbage_collection_(computer_science)">垃圾回收器</a>（Garbage collector, GC）是一种常见的选择，诸如 Go/Java 等都提供了 GC。</p>
-<span id="more"></span>
 <blockquote>
 <p>事实上，C++ 标准库中提供了<a target="_blank" rel="noopener" href="https://en.cppreference.com/w/cpp/memory">智能指针</a>等工具，能够解决一部分的内存管理问题。但是由于 C++ 的高自由度，即使在使用智能指针时，仍十分容易编写出会导致内存错误的代码。</p>
 </blockquote>
@@ -120,6 +119,8 @@
 <p>或许你作为一名有经验的程序员，在编程中可能已经遵守了上述这些准则，但是 Rust 的贡献在于，它将这些准则和语言的设计良好地结合在一起，通过提高了编译器的能力，减轻了程序员编程时的负担，同时尽可能地避免性能上的损耗。事实上，除了内存安全方面，Rust 也通过许多设计尝试避免包括线程安全和类型安全在内的安全问题。而本文介绍的内容，也只是 Rust 中的冰山一角。</p>
 
         </div>
+        <p>
+        <a class="post-title-link" href="/2022/02/17/Memory-Management-in-Rust/" style="text-decoration: none;">Read more --></a>
     </article>
     
 </section>

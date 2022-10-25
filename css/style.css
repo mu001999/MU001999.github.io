@@ -4,9 +4,8 @@ body {
   line-height: 1.6em;
   padding: 0 1.5em;
   margin: 0 auto;
-  width: 90%;
+  width: 80%;
   word-break: break-word;
-  font-family: 'Noto Serif SC', serif;
 }
 .header {
   display: flex;
@@ -18,10 +17,9 @@ body {
   align-items: center;
 }
 .header .blog-title .logo {
-  font-family: 'Source Serif Pro', 'Noto Serif SC', serif;
   color: #000;
   font-size: 1.2em;
-  text-decoration: underline;
+  text-decoration: none;
 }
 .header .blog-title {
   height: 26.5;
@@ -34,11 +32,11 @@ body {
 .header .menu .menu-item {
   display: inline-block;
   padding: 0.25em;
-  text-decoration: underline;
 }
 .header .menu .menu-item-link {
   color: #818181;
   font-size: 1em;
+  text-decoration: none;
 }
 .header .menu .menu-item-link:hover {
   color: #111;
@@ -119,7 +117,7 @@ body {
 .post pre {
   font-size: 16px;
   background-color: #f7f7f7;
-  font-family: 'Fantasque Sans Mono', 'PT Mono', 'Source Code Pro', monospace;
+  line-height: 1.5em;
 }
 .post .highlight {
   position: relative;
@@ -199,7 +197,7 @@ body {
 .posts .post-title .post-title-link {
   color: #000;
   font-weight: bold;
-  text-decoration: underline;
+  text-decoration: none;
 }
 .posts .post-content {
   margin-bottom: 1em;
@@ -213,6 +211,12 @@ body {
 }
 .posts .post-meta {
   color: #818181;
+}
+.posts .post-pre {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 /* normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
 html {
