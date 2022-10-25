@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <title>Seek the Truth</title>
+    <meta charset="utf-8">
+    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="stylesheet"
+        href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/styles/vs.min.css">
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    
+<link rel="stylesheet" href="/css/font.css">
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+  <meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="Seek the Truth" type="application/atom+xml">
+</head>
+
+<body>
+    <header class="header">
+    <div class="blog-title">
+        <a href="/" class="logo">Seek the Truth</a>
+    </div>
+    <nav class="navbar">
+        <ul class="menu">
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/" class="menu-item-link">Posts</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/atom.xml" class="menu-item-link">RSS</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a target="_blank" rel="noopener" href="https://github.com/MU001999" class="menu-item-link">Github</a>
+                </li>
+            
+        </ul>
+    </nav>
+</header>
+
+    <main class="main">
+        <article class="post">
+    <div class="post-title">
+        <h1 class="title">《编译器设计》读书笔记——中间表示</h1>
+    </div>
+    <div class="post-meta">
+        <span class="post-time">August 08, 2018</span>
+    </div>
+    <div class="post-content">
+        <p>编译器通常组织为一连串的处理趟，随着编译器不断推导有关被编译代码的知识，它必须将这些信息从一趟传递到另一趟，因而，对于推导出有关程序的全部事实，编译器需要一种表示，我们将这种表示称为<strong>中间表示</strong>(intermediate representation)，简称为IR。</p>
+<hr>
+<h3 id="中间表示的分类">中间表示的分类</h3>
+<p>泛泛而言，IR从结构上分为三类：</p>
+<ol>
+<li><strong>图IR</strong>， 将编译器的知识编码在图中。算法通过图中的对象来表述：结点、边、列表、树。</li>
+<li><strong>线性IR</strong>， 类似于某些抽象机上的为代码。相应的算法将迭代遍历简单的线性操作序列。</li>
+<li><strong>混合IR</strong>， 结合了图IR和线性IR的要素，为的是获取两者的优势而避免其弱点。一种常见的混合表示使用底层的线性IR来表示无循环代码的块，使用图来表示这些块之间的控制流。</li>
+</ol>
+<hr>
+<h3 id="图IR">图IR</h3>
+<p>许多编译器使用的IR将底层的代码表示为图。虽然所有的图IR都包含结点和边，但在抽象层次、图与底层代码之间的关系、图的结构等方面，各种图IR均有所不同。</p>
+<h5 id="与语法相关的树"><strong>与语法相关的树</strong></h5>
+<ol>
+<li>
+<p>语法分析树</p>
+<p>是对输入程序的推导或语法分析的图表示。相对于源程序文本，语法分析树比较大，因为它表示了完整的推导过程，树中的每个结点分别对应于推导过程中的各个语法符号。</p>
+</li>
+<li>
+<p>抽象语法树</p>
+<p>抽象语法树(Abstract Syntax Tree, AST)保留了语法分析树的基本结构，但剔除了其中非必要的结点。表达式的优先级和语义仍然保持原样，但无关的结点已经消失了。</p>
+</li>
+<li>
+<p>有向非循环图</p>
+<p>虽然AST与语法树相比更加简洁，但它仍然保留了原来的源代码结构。例如，a<em>2+a</em>2<em>b的AST包含了表达式a</em>2的两个不同副本。有向非循环图(Directed Acyclic Graph, DAG)是AST避免这种复制的一种简写。在DAG中，结点可以有多个父结点，相同子树可以被重用。</p>
+</li>
+</ol>
+<h5 id="图"><strong>图</strong></h5>
+<blockquote>
+<p>有向非循环图亦是图的一种。</p>
+</blockquote>
+<ol>
+<li>
+<p>控制流图</p>
+<p>控制流图(Control-Flow Graph, CFG)对程序中各个基本程序块((具有最大长度的)无分支代码序列，开始于一个有标号的操作，结束于一个分支、跳转或条件判断操作)之间的控制流建立了模型。CFG用一个结点表示每个基本控制块，用一条边表示块之间的每个可能的控制转移。</p>
+</li>
+<li>
+<p>依赖关系图</p>
+<p>模拟代码片段中值从定义到使用之间流动的图。绘制依赖关系图时边从定义处指向使用处。</p>
+</li>
+<li>
+<p>调用图</p>
+<p>表示程序中过程间接调用关系的图。调用图用一个结点表示每个过程，用一条边表示每个调用位置。</p>
+</li>
+</ol>
+<hr>
+<h3 id="线性IR">线性IR</h3>
+<p>图IR的备选方案是线性IR，线性IR对操作序列规定了一种清晰且使用的顺序。编译器中已经使用了许多种线性IR，如单地址代码、二地址代码以及三地址代码。</p>
+<ol>
+<li>
+<p><strong>堆栈机代码</strong></p>
+<p>堆栈机代码是一种单地址代码，假定操作数存在一个栈中。大多数操作从栈获得操作数，并将其结果推入栈。堆栈机代码比较紧凑，栈本身建立了一个隐式的命名空间，从而消除了IR中的许多名字，缩减了IR形式下程序的大小。</p>
+</li>
+<li>
+<p><strong>三地址代码</strong></p>
+<p>在三地址代码中，大多数操作形如i&lt;-j op k，其中包含一个运算符和两个操作数以及一个结果。一些运算符，如加载立即数或跳转，所需的参数较少。三地址代码相当紧凑，操作和名字都取自有限集。</p>
+</li>
+<li>
+<p><strong>线性代码的表示</strong></p>
+<p>三地址代码通常实现为一组四元组。每个四元组表示为四个字段：一个运算符、两个操作数（或源）、一个目标。编译器可以用各种方法实现四元组，如简单数组、指针数组、链表等。</p>
+</li>
+<li>
+<p><strong>根据线性代码建立控制流图</strong></p>
+<p>编译器通常必须在不同IR之间进行转换（通常是不同风格的IR）。一种例行转换是根据线性IR建立CFG。第一步，编译器必须找到线性IR中各个基本程序块的开始和结束。我们将块中的第一个操作称为前导指令(leader)。如果一个操作是过程中的第一个操作，或者它有标号(即可能是某个分支指令的目标)，那么它就是前导指令。如果线性IR包含并非分支指令目标的标号，那么将标号处理为前导指令可能导致块发生不必要的分裂。且如果代码包含任何具有二义性的跳转，那么它无论如何都必须将所有有标号语句处理为前导指令。之后，找到每个基本程序块结尾操作并添加边。</p>
+</li>
+</ol>
+<blockquote>
+<p><strong>具有二义性的跳转</strong>，指分支或跳转指令的目标无法在编译时确定；通常是跳转到寄存器指定的某个地址。</p>
+</blockquote>
+<hr>
+<h3 id="将值映射到名字">将值映射到名字</h3>
+<p>编译器用来为执行期间计算出的各种值分配内部名字的规则，也对它能够产生的代码有所影响。命名方案可能会揭示优化的机会，也可能使优化的机会变得模糊不清。</p>
+<h5 id="临时值的命名"><strong>临时值的命名</strong></h5>
+<p>在底层IR中，各个中间结果都有自身的名字。使用不同的名字会将这些结果暴露给分析和变换的过程。命名可能会隐藏上下文信息，因为其中可能将一个名字用于表示许多不同的值。命名也可能暴露上下文信息，只要它能够在名字和值之间建立对应关系。</p>
+<h5 id="静态单赋值形式"><strong>静态单赋值形式</strong></h5>
+<p>静态单赋值形式(Static Single-Assignment Form, SSA)是一IR，具有基于值的命名系统，通过重命名和使用称为Φ函数的伪操作产生的。静态单赋值形式中编码了控制的转移和值的流动，它广泛用于优化中。</p>
+<blockquote>
+<p><strong>Φ函数</strong></p>
+<blockquote>
+<p>Φ函数获取几个名字并将其合并，以定义一个新的名字。其行为取决于上下文。它选择其中一个参数的值来定义其目标SSA的名字。</p>
+</blockquote>
+</blockquote>
+<h5 id="内存模型"><strong>内存模型</strong></h5>
+<p>正如命名临时值的机制会影响到程序的IR版本中能够表示的信息，编译器对每个值的存储位置的选择也有类似的影响。</p>
+<ol>
+<li>
+<p><strong>寄存器到寄存器的模型(Register-to-Register Model)</strong></p>
+<p>编译器采用激进策略将值保存在寄存器中，而忽略机器的物理寄存器集合规定的任何限制。对任何值来说，如果它在大部分生命周期中可以合法地保存在寄存器中，那么编译器就选择将其置于寄存器中。仅当程序的语义要求将值存储到内存时，编译器才采取相应的操作。</p>
+</li>
+<li>
+<p><strong>内存到内存的模型(Memory-to-Memory Model)</strong></p>
+<p>编译器假定所有值都保存在内存中。值在临到使用之前，从内存加载到寄存器。在值定义完毕后，即从寄存器写出到内存。</p>
+</li>
+</ol>
+<hr>
+<h3 id="符号表">符号表</h3>
+<p>作为转换过程的一部分，编译器需要推导与被转换程序操控的各种实体有关的信息。编译器需要在IR中记录这些信息，或者按需重新推导，别无它法。大多数编译器都选择记录事实而非按需重新推导，这些事实可以直接记录在IR中，备选方案是为这些事实建立一个中央存储库，以提供对相关信息的高效访问能力，这种中央存储库称为符号表，成为了编译器IR不可分割的一部分。</p>
+
+    </div>
+</article>
+
+    </main>
+    <div class="footer">Copyright &copy;&nbsp;<a href="/">Mu001999</a>&nbsp;|&nbsp;<a href="http://www.miibeian.gov.cn/" target="_blank">京ICP备17013700号</a></div>
+
+</body>
+</html>

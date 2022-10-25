@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <title>Seek the Truth</title>
+    <meta charset="utf-8">
+    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="stylesheet"
+        href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/styles/vs.min.css">
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    
+<link rel="stylesheet" href="/css/font.css">
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+  <meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="Seek the Truth" type="application/atom+xml">
+</head>
+
+<body>
+    <header class="header">
+    <div class="blog-title">
+        <a href="/" class="logo">Seek the Truth</a>
+    </div>
+    <nav class="navbar">
+        <ul class="menu">
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/" class="menu-item-link">Posts</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/atom.xml" class="menu-item-link">RSS</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a target="_blank" rel="noopener" href="https://github.com/MU001999" class="menu-item-link">Github</a>
+                </li>
+            
+        </ul>
+    </nav>
+</header>
+
+    <main class="main">
+        <article class="post">
+    <div class="post-title">
+        <h1 class="title">通过 call-cc 给 Ice 实现 Coroutine</h1>
+    </div>
+    <div class="post-meta">
+        <span class="post-time">February 24, 2020</span>
+    </div>
+    <div class="post-content">
+        <p>前两天给 Ice 加了 call/cc, 为此还重构了一波, 实现 call/cc 还是因为看了轮子哥的大专系列(</p>
+<p>里边说提供 continuation 语言实现 Coroutine 起来很轻松, 后来又查了一些资料, 都说 continuation 表达能力很强, 就实现了一手, 调用方式完全等同 call/cc, 既然是看 Coroutine 才要实现 call/cc, 那实现了之后当然要用 call/cc 实现一手 Coroutine 了(</p>
+<p>不过这个 Coroutine 比较简陋, 只提供 create, resume, yield, destroy</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">coroutine: (@() &#123;<br>    @funcs: [];<br>    @conts: [];<br>    @deletes: [];<br>    @co_cont: none;<br><br>    @create(func) &#123;<br>        if deletes.empty() &#123;<br>            @id: funcs.size();<br>            funcs.push(func);<br>            conts.push(none);<br>            return id;<br>        &#125; else &#123;<br>            @id: deletes.pop();<br>            funcs[id]: func;<br>            conts[id]: none;<br>            return id;<br>        &#125;<br>    &#125;<br><br>    @resume(id) &#123;<br>        if conts[id] = none &#123;<br>            conts[id]: call_with_current_continuation(@(cont) &#123;<br>                co_cont: cont;<br>                funcs[id]();<br>            &#125;);<br>        &#125; else &#123;<br>            conts[id]: call_with_current_continuation(@(cont) &#123;<br>                co_cont: cont;<br>                conts[id](none);<br>            &#125;);<br>        &#125;<br>    &#125;<br><br>    @yield() &#123;<br>        call_with_current_continuation(co_cont);<br>    &#125;<br><br>    @destroy(id) &#123;<br>        funcs[id]: conts[id]: none;<br>        deletes.push(id);<br>    &#125;<br><br>    return @() &#123;&#125;;<br>&#125;)();<br></code></pre></td></tr></table></figure>
+<p>测试一下:</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">@foo() &#123;<br>    @i: 0;<br>    while i &lt; 5 &#123;<br>        println(i: i + 1);<br>        coroutine.yield();<br>    &#125;<br>&#125;<br><br>@id1: coroutine.create(foo);<br>@id2: coroutine.create(foo);<br><br>@i: 0;<br>while i &lt; 5 &#123;<br>    coroutine.resume(id1);<br>    coroutine.resume(id2);<br>    i: i + 1;<br>&#125;<br><br>coroutine.destroy(id1);<br>coroutine.destroy(id2);<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">1<br>1<br>2<br>2<br>3<br>3<br>4<br>4<br>5<br>5<br></code></pre></td></tr></table></figure>
+<p>里边唯一我觉得有点意思的地方是 resume 里, 直接在 lambda 里将当前的 continuation 绑定到 co_cont 上, 这样用户 create 的时候传入的函数就只需要调用 yield 了</p>
+<p>可惜除了 vsc 都没有 Ice 的高亮(</p>
+
+    </div>
+</article>
+
+    </main>
+    <div class="footer">Copyright &copy;&nbsp;<a href="/">Mu001999</a>&nbsp;|&nbsp;<a href="http://www.miibeian.gov.cn/" target="_blank">京ICP备17013700号</a></div>
+
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <title>Seek the Truth</title>
+    <meta charset="utf-8">
+    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="stylesheet"
+        href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/styles/vs.min.css">
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    
+<link rel="stylesheet" href="/css/font.css">
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+  <meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="Seek the Truth" type="application/atom+xml">
+</head>
+
+<body>
+    <header class="header">
+    <div class="blog-title">
+        <a href="/" class="logo">Seek the Truth</a>
+    </div>
+    <nav class="navbar">
+        <ul class="menu">
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/" class="menu-item-link">Posts</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/atom.xml" class="menu-item-link">RSS</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a target="_blank" rel="noopener" href="https://github.com/MU001999" class="menu-item-link">Github</a>
+                </li>
+            
+        </ul>
+    </nav>
+</header>
+
+    <main class="main">
+        <article class="post">
+    <div class="post-title">
+        <h1 class="title">Memory Management in Rust</h1>
+    </div>
+    <div class="post-meta">
+        <span class="post-time">February 17, 2022</span>
+    </div>
+    <div class="post-content">
+        <p>程序在运行时需要请求操作系统分配内存以及释放内存，因此，程序员在编写程序时，需要显式（手动）地编写分配和释放内存的代码，或者隐式（自动，由语言保证）地进行内存管理。对于前者，C/C++ 是代表语言，程序员需要手动管理内存；对于后者，<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Garbage_collection_(computer_science)">垃圾回收器</a>（Garbage collector, GC）是一种常见的选择，诸如 Go/Java 等都提供了 GC。</p>
+<span id="more"></span>
+<blockquote>
+<p>事实上，C++ 标准库中提供了<a target="_blank" rel="noopener" href="https://en.cppreference.com/w/cpp/memory">智能指针</a>等工具，能够解决一部分的内存管理问题。但是由于 C++ 的高自由度，即使在使用智能指针时，仍十分容易编写出会导致内存错误的代码。</p>
+</blockquote>
+<p>朴素的手动内存管理对程序员的要求更高，也意味着更容易出错，导致一些内存错误的产生，比如：</p>
+<ul>
+<li>解引用存储已释放空间的地址的指针（Use after free）</li>
+<li>没有释放空间导致的内存泄漏（Memory leak）</li>
+<li>重复释放已经被重用的空间（Double free）</li>
+</ul>
+<p>一个自动的内存管理机制，可以消除这些常见问题。GC 通过在运行时记录分配的空间和空间的使用信息来实现内存的自动管理，程序员就可以从内存管理中解放。<strong>但是</strong>，尽管这件事听起来还不错，但它意味着我们编写的程序在运行时，还附带着运行一个 GC，这当然会带来一些运行时的损耗。</p>
+<p>如果你不想在运行时带着一个 GC，又不想像 C/C++ 一样手动检查违反了内存安全的代码的存在，那么可以看看 Rust 的解决方案。Rust 提供了一种不借助 GC，又能够保证内存安全的高效内存管理方式。</p>
+<h2 id="所有权-——-大厦的基石">所有权 —— 大厦的基石</h2>
+<p><strong>所有权</strong>（<em>Ownership</em>）是 Rust 最重要的特性之一，也是 Rust 能够高效地保证内存安全的同时避免引入 GC 的核心机制。</p>
+<p>所有权是一组规则，描述了 Rust 程序如何管理内存。在 Rust 中，内存通过所有权系统来管理，该系统有一套由编译器进行检查的规则（即所有权规则），如果违反了任何一条规则，程序就不能被成功编译。因此，所有权是一组静态的、在编译时检查的规则。这意味着所有权系统不会带来运行时的损耗。</p>
+<p><a target="_blank" rel="noopener" href="https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html#ownership-rules">所有权规则</a>有且只有如下三条规则：</p>
+<ul>
+<li>Rust 中的每个值都有一个被称为其<strong>所有者</strong>（<em>Owner</em>）的变量。</li>
+<li>一个值在任一时刻有且只有一个所有者。</li>
+<li>当所有者离开作用域时，这个值将被丢弃。</li>
+</ul>
+<p>或许你认为这和大部分（OOP）语言中栈上对象在函数结束时进行析构，同时释放资源（<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Resource_acquisition_is_initialization">RAII</a>）的编程习惯似乎区别不大，事实上也确实如此，区别在于 Rust 将这种规则扩大到了所有值上，包括储存在堆上的值，并且由编译器保证。换言之，Rust enforces RAII。因此，在 Rust 中任何一个值（无论在栈上还是堆上），在不使用时（其所有者离开作用域）都将被丢弃（占用的空间被释放）。你可能已经发现了，没有内存泄漏的世界完成了。</p>
+<p>然而，目前的世界十分简陋，如果只有这三条规则，一个简单的实现是在赋值时复制数据并创建一个新值，尽管这样的实现不违背所有权规则，但却是低效的。因此，本文的剩余部分介绍 Rust 中和所有权相关的其它组成部分，这些部分在不违背所有权规则的基础上，和所有权系统共同组成了 Rust 高效的内存安全世界。</p>
+<h3 id="移动">移动</h3>
+<p>通常来说，复制堆上的数据被认为是缓慢的，因为堆上的数据通常较大，并且在复制时需要申请新的空间；而复制栈上的数据被认为是快速的，因为栈上的数据通常较小，并且类型的大小在编译时已知。</p>
+<p>以 Rust 中的 <code>String</code> 类型为例，与其它语言中的字符串类型相似，<code>String</code> 类型由三部分组成：一个指向存放字符串内容（占用堆上空间）的指针，一个长度和一个容量。而这些数据存储在栈上。当一个 <code>String</code> 类型的值被丢弃时，就需要根据栈上存储的数据释放占用的堆上空间。</p>
+<p>因此，为了避免复制堆上的数据，一种解决方案是允许在赋值时仅复制 <code>String</code> 在栈上的数据，但是这意味着堆上的空间此时分别被两个变量所有，在失效时会重复释放同一处堆上空间导致内存错误，同时也违背了所有权规则。对此，Rust 的解决方案是在复制了栈上数据之后，将该值的所有权转移给新变量，在当前作用域结束后，之前的所有者便不会再尝试释放堆上的空间。值的所有权的转移在 Rust 中被称为值的<strong>移动</strong>（<em>Move</em>）。同时，移动是 Rust 中赋值的默认行为。</p>
+<p>Rust 中，变量的声明通过 <code>let</code> 语句完成，作用域与其它编程语言类似：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust">&#123; <span class="hljs-comment">// s 在这里无效，它尚未声明</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>); <span class="hljs-comment">// 从这里开始 s 是有效的</span><br>    <span class="hljs-comment">// 使用 s</span><br>&#125; <span class="hljs-comment">// 在此之后，s 离开当前作用域，不再有效</span><br></code></pre></td></tr></table></figure>
+<p>在赋值后，变量 <code>s</code> 绑定到了 <code>String</code> 类型的一个值，此时 <code>s</code> 是该值的所有者。而当 <code>s</code> 离开当前作用域后便不再有效，此时其绑定的值会被丢弃。那么当我们允许值的移动时，将另一个拥有 <code>String</code> 类型的值的变量赋值给新变量会发生什么？</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br><span class="hljs-keyword">let</span> <span class="hljs-variable">s2</span> = s1;<br><span class="hljs-comment">// 此时使用 s1 会发生什么？</span><br></code></pre></td></tr></table></figure>
+<p>答案是 <code>s1</code> 的值会被移动给 <code>s2</code>，Rust 会认为 <code>s1</code> 不再有效，如果你此时使用 <code>s1</code>，编译会失败并得到一个错误：<code>s1</code> 的值已经被移动。而在所有权发生转移时，如前文所说，<code>s2</code> 其实复制了 <code>s1</code> 栈上的数据，并在此时令 <code>s1</code> 失效，避免两者在离开作用域时重复释放同一处堆上空间引发内存错误。</p>
+<h3 id="克隆和拷贝">克隆和拷贝</h3>
+<p>有时我们确实需要复制 <code>String</code> 中的所有数据（包括堆上的数据），在 Rust 中被称为<strong>克隆</strong>（<em>Clone</em>），可以通过显式调用通用方法 <code>clone</code> 实现这样的功能。克隆会产生一个数据相同的新值，此时 <code>s1</code> 和 <code>s2</code> 分别是两个 <code>String</code> 的所有者：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br><span class="hljs-keyword">let</span> <span class="hljs-variable">s2</span> = s1.<span class="hljs-title function_ invoke__">clone</span>();<br><span class="hljs-comment">// s1 和 s2 都有效</span><br></code></pre></td></tr></table></figure>
+<p>前面提到了，移动时复制的是栈上的数据，而使之前的所有者失效，是为了避免重复释放空间。但是，除了像 <code>String</code> 一样在占用了堆上空间的类型，还有像整型一样所有数据都存储在栈上的类型。这些类型不需要释放堆上空间，意味着不需要令之前的所有者失效。因此，Rust 提供了一个叫做 <code>Copy</code> trait 的类型注解用于这些类型，对于满足 <code>Copy</code> trait 的类型，赋值时会产生一个新值，行为与克隆相似，但不需要显式指定，在 Rust 中被称为<strong>拷贝</strong>（<em>Copy</em>）：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">let</span> <span class="hljs-variable">x</span> = <span class="hljs-number">42</span>;<br><span class="hljs-keyword">let</span> <span class="hljs-variable">y</span> = x;<br><span class="hljs-comment">// x 和 y 都有效</span><br></code></pre></td></tr></table></figure>
+<p>因此，在 Rust 中，移动是赋值时值的一般行为，而拷贝是当数据仅存储在栈上时值的特殊行为，值的克隆则不会自动发生，需要程序员的显式调用。这隐含了 Rust 在设计时的一个选择：不自动进行数据的“<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Object_copying#Deep_copy">深拷贝</a>”。可以认为任何<strong>自动</strong>的复制对运行时性能的影响较小。</p>
+<h3 id="扩展到函数">扩展到函数</h3>
+<p>事实上，几乎所有的编程语言中都有函数（或者类似的概念），而函数的调用涉及到值的传递和返回，因此我们还需要考虑在涉及到函数时，值和所有权的行为。由于向函数传递值，类似于将值赋值给函数的参数，而函数返回值类似于将返回值赋值给调用者声明的一个变量（或者不可见的临时变量）。因此，一个将所有权扩展到函数的简单实现是，在向函数传递值以及函数返回值时，采用和赋值一样的行为。在 Rust 中，向函数传递值时值的行为和赋值时相同，可能会移动或者拷贝，同样的，函数的返回值也可以移动：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s2</span> = <span class="hljs-title function_ invoke__">foo</span>(s1); <span class="hljs-comment">// s1 经由 foo 被移动给 s2</span><br>    <span class="hljs-comment">// s1 不再有效</span><br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">foo</span>(s: <span class="hljs-type">String</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">String</span> &#123; <span class="hljs-comment">// s 进入作用域</span><br>    s <span class="hljs-comment">// 返回 s 并移动给调用者</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>至此，通过所有权系统检查的代码中，值都能被正确地丢弃，空间都能被正确地回收，并且被移动过的值可以保证不会被再次使用。同时，这一切又都是高效的。</p>
+<h2 id="引用和借用">引用和借用</h2>
+<p>世界在拥有了所有权和移动语义后变得更好了，但是或许还不够好。比如，当我们实现的一个函数只希望使用一个参数的值，又不想获取所有权，并且调用者也希望在调用完成后继续使用它。在目前的世界里，函数需要在获取参数的所有权之后，在返回的时候再将该参数移动给调用者：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    <span class="hljs-keyword">let</span> (s2, len) = <span class="hljs-title function_ invoke__">length</span>(s1);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;The length of &#x27;&#123;&#125;&#x27; is &#123;&#125;.&quot;</span>, s2, len);<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">length</span>(s: <span class="hljs-type">String</span>) <span class="hljs-punctuation">-&gt;</span> (<span class="hljs-type">String</span>, <span class="hljs-type">usize</span>) &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">len</span> = s.<span class="hljs-title function_ invoke__">len</span>(); <span class="hljs-comment">// len() 返回字符串的长度</span><br>    (s, len) <span class="hljs-comment">// 可以使用元组返回多个值</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>尽管这样确实可行，而且对运行时的影响似乎也可以接受（只需要复制一些栈上的数据就行了），但是问题在于，没有人想要这样啰嗦地写代码。Rust 对此的解决方案是，提供了一个不获取值的所有权，但可以暂时获取值的使用权的功能，叫做<strong>引用</strong>（<em>Reference</em>）。</p>
+<p>在 Rust 中，<strong>引用</strong>存储值的地址，我们可以根据该地址访问属于其它变量的值。在 Rust 中，指向类型为 <code>String</code> 的值的引用的类型为 <code>&amp;String</code>。对于类型为 <code>String</code> 的值 <code>s</code>，我们可以通过 <code>&amp;s</code> 创建一个指向 <code>s</code> 的引用。这些 <code>&amp;</code> 符号表示引用，而 Rust 将创建一个引用的行为称为<strong>借用</strong>（<em>Borrowing</em>）。同时，引用无需返回值来归还所有权，因为它不具有值的所有权，这与本节开始提出的需求是一致的。因此，我们可以改写本节开始的代码：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">len</span> = <span class="hljs-title function_ invoke__">length</span>(&amp;s1);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;The length of &#x27;&#123;&#125;&#x27; is &#123;&#125;.&quot;</span>, s1, len);<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">length</span>(s: &amp;<span class="hljs-type">String</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">usize</span> &#123;<br>    s.<span class="hljs-title function_ invoke__">len</span>() <span class="hljs-comment">// len() 返回字符串的长度</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<h3 id="生命周期">生命周期</h3>
+<p>事实上，许多编程语言中都有和引用类似的概念，但是在没有 GC 的语言中，引用（或者类似的功能）的使用可能会导致一些错误，比如[悬垂引用](Dangling Pointer)，即引用没有指向有效对象。而在 Rust 中，引用确保指向某个特定类型的有效值。引用有效性的保证依赖于<strong>生命周期</strong>（<em>Lifetime</em>）机制，它是与所有权机制同等重要的内存管理机制。</p>
+<p>生命周期是引用必须有效的代码区域（与作用域的概念接近）。与所有权机制相似，生命周期机制也要求编译器保证代码满足一些关于生命周期的规则，事实上，这由编译器中的<strong>借用检查器</strong>（<em>Borrow checker</em>）来保证。同样的，这些的规则的检查也发生在编译时，因此不会影响运行时效率。</p>
+<p>考虑下面的程序，它有一个外部作用域和一个内部作用域：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust">&#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">r</span>;                <span class="hljs-comment">// ---------+-- &#x27;a</span><br>    &#123;                     <span class="hljs-comment">//          |</span><br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">x</span> = <span class="hljs-number">5</span>;        <span class="hljs-comment">// -+-- &#x27;b  |</span><br>        r = &amp;x;           <span class="hljs-comment">//  |       |</span><br>    &#125;                     <span class="hljs-comment">// -+       |</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;r: &#123;&#125;&quot;</span>, r); <span class="hljs-comment">//          |</span><br>&#125;                         <span class="hljs-comment">// ---------+</span><br></code></pre></td></tr></table></figure>
+<p>在注释中，我们将 <code>r</code> 的生命周期标记为 <code>'a</code>，将 <code>x</code> 的生命周期标记为 <code>'b</code>。显然，<code>'b</code> 块要比 <code>'a</code> 块小。在编译时，Rust 比较这两个生命周期的大小，并发现生命周期为 <code>'a</code> 的 <code>r</code> 引用了一个生命周期为 <code>'b</code> 的对象 <code>x</code>。由于生命周期 <code>'b</code> 比生命周期 <code>'a</code> 小，这意味着被引用的对象比它的引用者存在的时间更短，因此程序被拒绝编译。如果成功编译，这将导致悬垂引用。这是借用检查器需要检查的规则之一：一个引用的生命周期不超过其引用的对象的生命周期。</p>
+<p>大部分时候，生命周期是隐含并可以推断的（比如在函数体内，局部引用的生命周期通常与作用域保持一致）。但在一些情况下，比如当引用跨越了函数边界（作为参数）时，这种时候，引用的生命周期和调用者有关，编译器此时缺乏足够的信息进行判断。为此，Rust 提供了一种可以描述多个引用生命周期相互的关系，而不影响其生命周期的功能，叫做<strong>生命周期注解</strong>（<em>Lifetime annotation</em>）。程序员可以通过生命周期注解，提供给编译器足够的信息，以便借用检查器可以进行分析。</p>
+<h2 id="总结">总结</h2>
+<p>或许你作为一名有经验的程序员，在编程中可能已经遵守了上述这些准则，但是 Rust 的贡献在于，它将这些准则和语言的设计良好地结合在一起，通过提高了编译器的能力，减轻了程序员编程时的负担，同时尽可能地避免性能上的损耗。事实上，除了内存安全方面，Rust 也通过许多设计尝试避免包括线程安全和类型安全在内的安全问题。而本文介绍的内容，也只是 Rust 中的冰山一角。</p>
+
+    </div>
+</article>
+
+    </main>
+    <div class="footer">Copyright &copy;&nbsp;<a href="/">Mu001999</a>&nbsp;|&nbsp;<a href="http://www.miibeian.gov.cn/" target="_blank">京ICP备17013700号</a></div>
+
+</body>
+</html>

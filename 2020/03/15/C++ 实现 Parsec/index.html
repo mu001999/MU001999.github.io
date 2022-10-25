@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <title>Seek the Truth</title>
+    <meta charset="utf-8">
+    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="stylesheet"
+        href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/styles/vs.min.css">
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    
+<link rel="stylesheet" href="/css/font.css">
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+  <meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="Seek the Truth" type="application/atom+xml">
+</head>
+
+<body>
+    <header class="header">
+    <div class="blog-title">
+        <a href="/" class="logo">Seek the Truth</a>
+    </div>
+    <nav class="navbar">
+        <ul class="menu">
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/" class="menu-item-link">Posts</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/atom.xml" class="menu-item-link">RSS</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a target="_blank" rel="noopener" href="https://github.com/MU001999" class="menu-item-link">Github</a>
+                </li>
+            
+        </ul>
+    </nav>
+</header>
+
+    <main class="main">
+        <article class="post">
+    <div class="post-title">
+        <h1 class="title">C++ 实现 Parsec</h1>
+    </div>
+    <div class="post-meta">
+        <span class="post-time">March 15, 2020</span>
+    </div>
+    <div class="post-content">
+        <p>前一段时间看到了梨梨喵聚聚写的<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/25411428">Parser Combinator 在 C++ 里的 DSL</a>, 感觉好厉害, 正好毕设里要写一部分前端, 昨天又把这篇文章看了一遍, 想着我也要用这么酷炫的东西来参与一下毕设, 于是今天仿了一个, 不过由于电脑屏幕太小(理由), 看不懂梨梨喵聚聚的代码, 只好照着文章里的理念自己试着实现一下, 类的设计应该差不多, 不过具体的实现应该鶸了很多, 代码在<a target="_blank" rel="noopener" href="https://github.com/MU001999/parsec">parsec</a>, 目前还不支持左递归和垃圾回收(</p>
+<p>先上一个加减的小例子吧:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><code class="hljs cpp">Parsec&lt;<span class="hljs-type">char</span>&gt; Decimal;<br>Parsec&lt;string&gt; Number;<br>Parsec&lt;<span class="hljs-type">int</span>&gt; Primary, Additive, Additive_;<br><br><span class="hljs-comment">// Decimal := &#x27;0&#x27; | ... | &#x27;9&#x27;</span><br>Decimal = (<span class="hljs-string">&#x27;0&#x27;</span>_T | <span class="hljs-string">&#x27;1&#x27;</span>_T | <span class="hljs-string">&#x27;2&#x27;</span>_T | <span class="hljs-string">&#x27;3&#x27;</span>_T | <span class="hljs-string">&#x27;4&#x27;</span>_T | <span class="hljs-string">&#x27;5&#x27;</span>_T | <span class="hljs-string">&#x27;6&#x27;</span>_T | <span class="hljs-string">&#x27;7&#x27;</span>_T | <span class="hljs-string">&#x27;8&#x27;</span>_T | <span class="hljs-string">&#x27;9&#x27;</span>_T );<br><br><span class="hljs-comment">// Number := Decimal Number | Decimal</span><br>Number =<br>    (Decimal + Number &gt;&gt;<br>        [](<span class="hljs-type">char</span> decimal, string number) &#123;<br>            <span class="hljs-keyword">return</span> decimal + number;<br>        &#125;) |<br>    (Decimal &gt;&gt;<br>        [](<span class="hljs-type">char</span> decimal) &#123;<br>            <span class="hljs-keyword">return</span> <span class="hljs-built_in">string</span>() + decimal;<br>        &#125;);<br><br><span class="hljs-comment">// Primary := Number</span><br>Primary = Number &gt;&gt; [](string number) &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">stoi</span>(number);<br>&#125;;<br><br><span class="hljs-comment">// Additive := Primary Additive_ | Primary</span><br><span class="hljs-comment">// Additive_ := + Additive | - Additive</span><br>Additive =<br>    (Primary + Additive_ &gt;&gt;<br>        [](<span class="hljs-type">int</span> primary, <span class="hljs-type">int</span> additive) &#123;<br>            <span class="hljs-keyword">return</span> primary + additive;<br>        &#125;) |<br>    (Primary &gt;&gt; [](<span class="hljs-type">int</span> primary) &#123;<br>        <span class="hljs-keyword">return</span> primary;<br>    &#125;);<br>Additive_ = ((<span class="hljs-string">&#x27;+&#x27;</span>_T | <span class="hljs-string">&#x27;-&#x27;</span>_T) + Additive &gt;&gt; [](<span class="hljs-type">char</span> op, <span class="hljs-type">int</span> additive) &#123;<br>    <span class="hljs-built_in">return</span> (op == <span class="hljs-string">&#x27;+&#x27;</span> ? additive : -additive);<br>&#125;);<br><br>cout &lt;&lt; <span class="hljs-built_in">Additive</span>(<span class="hljs-string">&quot;1+2+3&quot;</span>) &lt;&lt; endl;<br></code></pre></td></tr></table></figure>
+<p>例子是改的梨梨瞄聚聚的, 因为不支持左递归, 只能手动提取公因子了(</p>
+<p>和梨梨瞄聚聚重复的原理部分就不说了, 想知道的可以看一下梨梨瞄聚聚的那篇文章, 说一下不一样的地方吧, 我的实现里的类型笛卡尔乘积的结果使用 std::tuple&lt;Ts…&gt; 表示的, 类型的和的结果用 std::variant&lt;Ts…&gt; 表示, 当返回值的类型可能有多类型的时候就可以使形参的类型为 std::variant&lt;Ts…&gt;, 保证类型安全的同时还能接收多个类型的结果, 同样可以令组合子返回的是一个 tuple 类型, 可以继续和其它类型相乘或者相加, 后边就可以简化实现.</p>
+<p>写了好几个小时, 虽然代码不多, 但是模板多起来密度太大真的眼花缭乱, 希望之后能支持一下左递归之类的操作吧, 毕竟还要拿来写毕设, 边用边改吧(</p>
+
+    </div>
+</article>
+
+    </main>
+    <div class="footer">Copyright &copy;&nbsp;<a href="/">Mu001999</a>&nbsp;|&nbsp;<a href="http://www.miibeian.gov.cn/" target="_blank">京ICP备17013700号</a></div>
+
+</body>
+</html>

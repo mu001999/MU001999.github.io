@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <title>Seek the Truth</title>
+    <meta charset="utf-8">
+    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="stylesheet"
+        href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/styles/vs.min.css">
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    
+<link rel="stylesheet" href="/css/font.css">
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+  <meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="Seek the Truth" type="application/atom+xml">
+</head>
+
+<body>
+    <header class="header">
+    <div class="blog-title">
+        <a href="/" class="logo">Seek the Truth</a>
+    </div>
+    <nav class="navbar">
+        <ul class="menu">
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/" class="menu-item-link">Posts</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/atom.xml" class="menu-item-link">RSS</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a target="_blank" rel="noopener" href="https://github.com/MU001999" class="menu-item-link">Github</a>
+                </li>
+            
+        </ul>
+    </nav>
+</header>
+
+    <main class="main">
+        <article class="post">
+    <div class="post-title">
+        <h1 class="title">扯 C++ 里的 Lambda</h1>
+    </div>
+    <div class="post-meta">
+        <span class="post-time">March 17, 2020</span>
+    </div>
+    <div class="post-content">
+        <p>之前写(抄) parsec 的时候, 在重载 <code>operator&gt;&gt;</code> 的时候, <code>operator&gt;&gt;</code> 需要接收一个 lambda, 之后返回一个 <code>Component&lt;R&gt;</code>, 其中 R 是接收 lambda 的返回值类型, 所以就要搞到 lambda 对应的函数类型</p>
+<p>在一开始我是直接用 <code>std::function</code> 做的, 但是众所周知, 下面这样的写法是匹配不了的:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> R, <span class="hljs-keyword">typename</span> ...Args&gt;<br>ParsecComponent&lt;R&gt; <span class="hljs-keyword">operator</span>&gt;&gt;(std::function&lt;<span class="hljs-built_in">R</span>(Args...)&gt; callback) &#123;<br>    ParsecComponent&lt;R&gt; component;<br>    ...<br>    <span class="hljs-keyword">return</span> component;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>因为 lambda 表达式到 std::function 要进行类型转换, 毕竟是两个类型, 所以指明 std::function 的模板实参的时候才能进行 lambda -&gt; std::function 的隐式转换, 不过一开始为了偷懒, 而且我只需要拿到 lambda 的返回值类型, 就这样写了:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> Func&gt;<br><span class="hljs-keyword">auto</span> <span class="hljs-keyword">operator</span>&gt;&gt;(Func &amp;&amp;callback) &#123;<br>    <span class="hljs-keyword">using</span> NewResult = <span class="hljs-keyword">typename</span> <span class="hljs-keyword">decltype</span>(std::<span class="hljs-built_in">function</span>(callback))::result_type;<br>    ParsecComponent&lt;NewResult&gt; component;<br>    ...<br>    <span class="hljs-keyword">return</span> component;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>所以说 <code>auto</code> 这种东西还真是好用啊, 类型还可以拖延到函数体里做(</p>
+<p>这样做总归有种脱裤子放屁的感觉, 那么怎么不通过 std::function 就能拿到 lambda 表达式对应的函数类型呢?</p>
+<p>众所周知, 每一个 lambda 表达式的类型都是不一样的, 比如:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-function"><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> Func&gt;</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">print</span><span class="hljs-params">(Func &amp;&amp;f)</span> </span>&#123;<br>    std::cout &lt;&lt; <span class="hljs-built_in">typeid</span>(Func).<span class="hljs-built_in">name</span>() &lt;&lt; std::endl;<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span> </span>&#123;<br>    <span class="hljs-built_in">print</span>([]()&#123;&#125;);<br>    <span class="hljs-built_in">print</span>([]()&#123;&#125;);<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>我这里输出的结果是</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs plain">Z4mainE3$_0<br>Z4mainE3$_1<br></code></pre></td></tr></table></figure>
+<p>毕竟如果要每个定义相同的 lambda 的类型相同是不现实而而且没有必要的, 何况还有闭包捕获之类的复杂性需要考虑, 但是众所周知, lambda 返回的是一个对象, 也即它的类型重载了 <code>operator()</code>, 而 <code>operator()</code> 又是一个函数, 那么我们不久可以通过推导其重载的 <code>operator()</code> 函数类型拿到 lambda 对应的函数类型了吗(</p>
+<p>所以这件事情很清晰明了了, 我们只需要拿到 lambda 表达式产生的匿名类型, 然后根据类成员函数寻址到它的 <code>operator()</code>, 然后推导出 <code>operator()</code> 的函数签名就可以了!</p>
+<p>那就划分成三步吧</p>
+<h2 id="一-得到-lambda-对应的匿名类类型">一, 得到 lambda 对应的匿名类类型</h2>
+<p>这一步是很简单的, 因为只要模板实参自动推导一下就出来了</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-function"><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> Func&gt;</span><br><span class="hljs-function"><span class="hljs-type">void</span> <span class="hljs-title">foo</span><span class="hljs-params">(Func &amp;&amp;lambda)</span></span>;<br></code></pre></td></tr></table></figure>
+<p>那现在这个 Func 就是我们需要的类型</p>
+<h2 id="二-推导-Func-重载的-operator-函数签名">二, 推导 Func 重载的 <code>operator()</code> 函数签名</h2>
+<p>因为当前我们只有一个 Func 类型, 但是如果要获取 <code>operator()</code> 的签名的话, 我们还需要对 <code>operator()</code> 的类型做一个特化, 比如</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">lambda_traits</span>;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> R, <span class="hljs-keyword">typename</span> ClassType, <span class="hljs-keyword">typename</span> ...Args&gt;<br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">lambda_traits</span>&lt;<span class="hljs-built_in">R</span>(ClassType::*)(Args...) <span class="hljs-type">const</span>&gt; &#123;<br>    <span class="hljs-keyword">using</span> result_type = R;<br>    <span class="hljs-keyword">using</span> args_type = std::tuple&lt;Args...&gt;;<br>    <span class="hljs-keyword">template</span>&lt;<span class="hljs-type">size_t</span> index&gt;<br>    <span class="hljs-keyword">using</span> arg_type_at = std::<span class="hljs-type">tuple_element_t</span>&lt;index, args_type&gt;;<br>    <span class="hljs-type">static</span> <span class="hljs-keyword">constexpr</span> <span class="hljs-type">size_t</span> arity = <span class="hljs-keyword">sizeof</span>...(Args);<br>&#125;;<br></code></pre></td></tr></table></figure>
+<p>很简单对吧, 只需要对类的成员函数的类型做一个特化就好了</p>
+<p>其实这个时候已经可以用了, 比如</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> Func,<br>    <span class="hljs-keyword">typename</span> R = <span class="hljs-keyword">typename</span> lambda_traits&lt;<span class="hljs-keyword">decltype</span>(&amp;Func::<span class="hljs-built_in">operator</span>())&gt;::result_type&gt;<br><span class="hljs-type">void</span> <span class="hljs-built_in">foo</span>(Func &amp;&amp;lambda);<br></code></pre></td></tr></table></figure>
+<h2 id="三-包装一下">三, 包装一下</h2>
+<p>其实可以看到第二步的时候已经可以用了, 那么我们只需要把调用的过程包装一下, 但是由于我们拿到的是一个 Func, 所以需要把之前的 <code>lambda_traits</code> 变成基类, 然后另 Func 实例化的模板类继承它就可以了</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">lambda_traits_base</span>;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> R, <span class="hljs-keyword">typename</span> ClassType, <span class="hljs-keyword">typename</span> ...Args&gt;<br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">lambda_traits_base</span>&lt;<span class="hljs-built_in">R</span>(ClassType::*)(Args...) <span class="hljs-type">const</span>&gt; &#123;<br>    <span class="hljs-keyword">using</span> result_type = R;<br>    <span class="hljs-keyword">using</span> args_type = std::tuple&lt;Args...&gt;;<br>    <span class="hljs-keyword">template</span>&lt;<span class="hljs-type">size_t</span> index&gt;<br>    <span class="hljs-keyword">using</span> arg_type_at = std::<span class="hljs-type">tuple_element_t</span>&lt;index, args_type&gt;;<br>    <span class="hljs-type">static</span> <span class="hljs-keyword">constexpr</span> <span class="hljs-type">size_t</span> arity = <span class="hljs-keyword">sizeof</span>...(Args);<br>&#125;;<br><br><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> Func&gt;<br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">lambda_traits</span> : lambda_traits_base&lt;<span class="hljs-keyword">decltype</span>(&amp;Func::<span class="hljs-built_in">operator</span>())&gt; &#123;&#125;;<br></code></pre></td></tr></table></figure>
+<p>支持 C++17 的 lambda 现在是没有问题了, 那么有人要问了, C++20 的 lambda 是支持模板 operator() 的, 这个显然是不支持的啊, 是垃圾</p>
+<p>那就来接轨一哈 20 吧, 反正接轨了之后是不影响 17 的 lambda 推导的</p>
+<hr>
+<p>支持 template operator() 的 lambda 顾名思义就是长这样子的啦:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-keyword">auto</span> foo = []&lt;<span class="hljs-keyword">typename</span> T, <span class="hljs-keyword">typename</span> ...Args&gt;(Args...) -&gt; T &#123; <span class="hljs-keyword">return</span> <span class="hljs-built_in">T</span>(); &#125;;<br>foo.<span class="hljs-built_in">operator</span>()&lt;...&gt;(...);<br></code></pre></td></tr></table></figure>
+<p>可以看出来(目前)如果要调用这个 lambda 的话, 我们需要显式地指明模板的实参, 所以在推导的时候, 模板实参的信息也是要提供的, 那么只需要简单地修改一下我们的 lambda_traits:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> Func, <span class="hljs-keyword">typename</span> ...Args&gt;<br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">lambda_traits</span> : lambda_traits_base&lt;<span class="hljs-keyword">decltype</span>(&amp;Func::<span class="hljs-keyword">template</span> <span class="hljs-built_in">operator</span>()&lt;Args...&gt;)&gt; &#123;&#125;;<br><br><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> Func&gt;<br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">lambda_traits</span> : lambda_traits_base&lt;<span class="hljs-keyword">decltype</span>(&amp;Func::<span class="hljs-built_in">operator</span>())&gt; &#123;&#125;;<br></code></pre></td></tr></table></figure>
+<p>这样一来就可以了, 不过还有一种特殊情况, 比如说我们有一个这样类似提供了 template operator() 的类:</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Foo</span><br>&#123;<br>    <span class="hljs-function"><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> ...Args&gt;</span><br><span class="hljs-function">    <span class="hljs-type">void</span> <span class="hljs-title">operator</span><span class="hljs-params">()</span> </span>&#123;&#125;;<br>&#125;;<br></code></pre></td></tr></table></figure>
+<p>当我们在获取他无模板实参的 operator() 时, 我们只能通过 <code>&amp;Foo::template operator()&lt;&gt;</code> 而不能写 <code>&amp;Foo::operator()</code>, 当然这也是显而易见的, 不过如果我们的 lambda 支持的 template operator() 能够接收无实参的实例化的话, 就会导致前边的 lambda_traits 失效, 所以我们需要在模板实参 Args 为空的时候判断一下要取 <code>operator()</code> 还是 <code>template operator()&lt;&gt;</code></p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T, <span class="hljs-keyword">typename</span> = std::<span class="hljs-type">void_t</span>&lt;&gt;&gt;<br><span class="hljs-keyword">struct</span> call_which &#123;<br>    <span class="hljs-keyword">using</span> type = <span class="hljs-keyword">decltype</span>(&amp;T::<span class="hljs-built_in">operator</span>());<br>&#125;;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt;<br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">call_which</span>&lt;T, std::<span class="hljs-type">void_t</span>&lt;<span class="hljs-keyword">decltype</span>(&amp;T::<span class="hljs-keyword">template</span> <span class="hljs-built_in">operator</span>()&lt;&gt;)&gt;&gt; &#123;<br>    <span class="hljs-keyword">using</span> type = <span class="hljs-keyword">decltype</span>(&amp;T::<span class="hljs-keyword">template</span> <span class="hljs-built_in">operator</span>()&lt;&gt;);<br>&#125;;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt;<br><span class="hljs-keyword">using</span> <span class="hljs-type">call_which_t</span> = <span class="hljs-keyword">typename</span> call_which&lt;T&gt;::type;<br><br><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T, <span class="hljs-keyword">typename</span> ...Args&gt;<br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">lambda_traits</span> : lambda&lt;<span class="hljs-keyword">decltype</span>(&amp;T::<span class="hljs-keyword">template</span> <span class="hljs-built_in">operator</span>()&lt;Args...&gt;)&gt; &#123;&#125;;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt;<br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">lambda_traits</span>&lt;T&gt; : lambda&lt;<span class="hljs-type">call_which_t</span>&lt;T&gt;&gt; &#123;&#125;;<br></code></pre></td></tr></table></figure>
+<p>通过 <code>void_t</code> 判断了一下是不是具有 <code>template operator()&lt;&gt;</code> 就可以了</p>
+
+    </div>
+</article>
+
+    </main>
+    <div class="footer">Copyright &copy;&nbsp;<a href="/">Mu001999</a>&nbsp;|&nbsp;<a href="http://www.miibeian.gov.cn/" target="_blank">京ICP备17013700号</a></div>
+
+</body>
+</html>

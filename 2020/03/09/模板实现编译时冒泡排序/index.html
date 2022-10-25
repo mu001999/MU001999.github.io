@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport">
+    <title>Seek the Truth</title>
+    <meta charset="utf-8">
+    <link rel="shortcut icon" href="/favicon.png">
+    <link rel="stylesheet"
+        href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/styles/vs.min.css">
+    <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    
+<link rel="stylesheet" href="/css/font.css">
+
+    
+<link rel="stylesheet" href="/css/style.css">
+
+  <meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="Seek the Truth" type="application/atom+xml">
+</head>
+
+<body>
+    <header class="header">
+    <div class="blog-title">
+        <a href="/" class="logo">Seek the Truth</a>
+    </div>
+    <nav class="navbar">
+        <ul class="menu">
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/" class="menu-item-link">Posts</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a href="/atom.xml" class="menu-item-link">RSS</a>
+                </li>
+            
+                
+                
+                <li class="menu-item">
+                    <a target="_blank" rel="noopener" href="https://github.com/MU001999" class="menu-item-link">Github</a>
+                </li>
+            
+        </ul>
+    </nav>
+</header>
+
+    <main class="main">
+        <article class="post">
+    <div class="post-title">
+        <h1 class="title">模板实现编译时冒泡排序</h1>
+    </div>
+    <div class="post-meta">
+        <span class="post-time">March 09, 2020</span>
+    </div>
+    <div class="post-content">
+        <p>看到特首写了个编译时的归并，感觉挺好玩，写了个冒泡试试，第一次用模板写这种东西，见笑了（</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iostream&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;iterator&gt;</span></span><br><span class="hljs-meta">#<span class="hljs-keyword">include</span> <span class="hljs-string">&lt;type_traits&gt;</span></span><br><br><span class="hljs-keyword">using</span> <span class="hljs-keyword">namespace</span> std;<br><br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> ...vals&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">Vals</span> &#123;&#125;;<br><br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> i, <span class="hljs-keyword">typename</span> T&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">ValueAt</span>;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> i, <span class="hljs-type">int</span> val0, <span class="hljs-type">int</span> ...vals&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">ValueAt</span>&lt;i, Vals&lt;val0, vals...&gt;&gt;<br>&#123;<br>    <span class="hljs-keyword">constexpr</span> <span class="hljs-type">static</span> <span class="hljs-type">int</span> val = ValueAt&lt;i - <span class="hljs-number">1</span>, Vals&lt;vals...&gt;&gt;::val;<br>&#125;;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> val0, <span class="hljs-type">int</span> ...vals&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">ValueAt</span>&lt;<span class="hljs-number">0</span>, Vals&lt;val0, vals...&gt;&gt;<br>&#123;<br>    <span class="hljs-keyword">constexpr</span> <span class="hljs-type">static</span> <span class="hljs-type">int</span> val = val0;<br>&#125;;<br><br><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T1, <span class="hljs-keyword">typename</span> T2&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">Combine</span>;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> ...vals1, <span class="hljs-type">int</span> ...vals2&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">Combine</span>&lt;Vals&lt;vals1...&gt;, Vals&lt;vals2...&gt;&gt;<br>&#123;<br>    <span class="hljs-keyword">using</span> type = Vals&lt;vals1..., vals2...&gt;;<br>&#125;;<br><br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> i, <span class="hljs-keyword">typename</span> T&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">SwapValue</span>;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> i, <span class="hljs-type">int</span> val, <span class="hljs-type">int</span> ...vals&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">SwapValue</span>&lt;i, Vals&lt;val, vals...&gt;&gt;<br>&#123;<br>    <span class="hljs-keyword">using</span> type = <span class="hljs-keyword">typename</span> Combine&lt;Vals&lt;val&gt;, <span class="hljs-keyword">typename</span> SwapValue&lt;i - <span class="hljs-number">1</span>, Vals&lt;vals...&gt;&gt;::type&gt;::type;<br>&#125;;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> val1, <span class="hljs-type">int</span> val2, <span class="hljs-type">int</span> ...vals&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">SwapValue</span>&lt;<span class="hljs-number">0</span>, Vals&lt;val1, val2, vals...&gt;&gt;<br>&#123;<br>    <span class="hljs-keyword">using</span> type = <span class="hljs-keyword">typename</span> Combine&lt;Vals&lt;val2&gt;, <span class="hljs-keyword">typename</span> Combine&lt;Vals&lt;val1&gt;, Vals&lt;vals...&gt;&gt;::type&gt;::type;<br>&#125;;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> val1, <span class="hljs-type">int</span> val2&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">SwapValue</span>&lt;<span class="hljs-number">0</span>, Vals&lt;val1, val2&gt;&gt;<br>&#123;<br>    <span class="hljs-keyword">using</span> type = Vals&lt;val2, val1&gt;;<br>&#125;;<br><br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> i, <span class="hljs-type">int</span> j, <span class="hljs-keyword">typename</span> T&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">BubbleSort</span><br>&#123;<br>    <span class="hljs-keyword">using</span> type = <span class="hljs-keyword">typename</span> <span class="hljs-type">conditional_t</span>&lt;(ValueAt&lt;j - <span class="hljs-number">1</span>, T&gt;::val &gt; ValueAt&lt;j, T&gt;::val),<br>        BubbleSort&lt;i, j + <span class="hljs-number">1</span>, <span class="hljs-keyword">typename</span> SwapValue&lt;j - <span class="hljs-number">1</span>, T&gt;::type&gt;,<br>        BubbleSort&lt;i, j + <span class="hljs-number">1</span>, T&gt;&gt;::type;<br>&#125;;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> val&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">BubbleSort</span>&lt;<span class="hljs-number">1</span>, <span class="hljs-number">1</span>, Vals&lt;val&gt;&gt;<br>&#123;<br>    <span class="hljs-keyword">using</span> type = Vals&lt;val&gt;;<br>&#125;;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> j, <span class="hljs-type">int</span> ...vals&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">BubbleSort</span>&lt;<span class="hljs-keyword">sizeof</span>...(vals), j, Vals&lt;vals...&gt;&gt;<br>&#123;<br>    <span class="hljs-keyword">using</span> type = Vals&lt;vals...&gt;;<br>&#125;;<br><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> i, <span class="hljs-type">int</span> ...vals&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">BubbleSort</span>&lt;i, <span class="hljs-keyword">sizeof</span>...(vals), Vals&lt;vals...&gt;&gt;<br>&#123;<br>    <span class="hljs-keyword">using</span> type = <span class="hljs-keyword">typename</span> BubbleSort&lt;i + <span class="hljs-number">1</span>, <span class="hljs-number">1</span>, Vals&lt;vals...&gt;&gt;::type;<br>&#125;;<br><br><span class="hljs-keyword">template</span>&lt;<span class="hljs-keyword">typename</span> T&gt; <span class="hljs-keyword">struct</span> <span class="hljs-title class_">Sort</span><br>&#123;<br>    <span class="hljs-keyword">using</span> type = <span class="hljs-keyword">typename</span> BubbleSort&lt;<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, T&gt;::type;<br>&#125;;<br><br><span class="hljs-function"><span class="hljs-keyword">template</span>&lt;<span class="hljs-type">int</span> ...vals&gt; <span class="hljs-type">void</span> <span class="hljs-title">print</span><span class="hljs-params">(Vals&lt;vals...&gt;)</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-type">static</span> <span class="hljs-keyword">constexpr</span> <span class="hljs-keyword">auto</span> vs = &#123; vals... &#125;;<br>    <span class="hljs-built_in">copy</span>(<span class="hljs-built_in">begin</span>(vs), <span class="hljs-built_in">end</span>(vs), <span class="hljs-built_in">ostream_iterator</span>&lt;<span class="hljs-type">int</span>&gt;(cout, <span class="hljs-string">&quot; &quot;</span>));<br>    <span class="hljs-built_in">endl</span>(cout);<br>&#125;<br><br><span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">main</span><span class="hljs-params">()</span></span><br><span class="hljs-function"></span>&#123;<br>    <span class="hljs-built_in">print</span>(Sort&lt;Vals&lt;<span class="hljs-number">1</span>&gt;&gt;::<span class="hljs-built_in">type</span>());<br>    <span class="hljs-built_in">print</span>(Sort&lt;Vals&lt;<span class="hljs-number">2</span>,<span class="hljs-number">1</span>&gt;&gt;::<span class="hljs-built_in">type</span>());<br>    <span class="hljs-built_in">print</span>(Sort&lt;Vals&lt;<span class="hljs-number">3</span>,<span class="hljs-number">5</span>,<span class="hljs-number">2</span>,<span class="hljs-number">8</span>,<span class="hljs-number">7</span>,<span class="hljs-number">1</span>,<span class="hljs-number">6</span>,<span class="hljs-number">9</span>,<span class="hljs-number">4</span>&gt;&gt;::<span class="hljs-built_in">type</span>());<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>代码本身很简单，就是冒泡的思路，递归 j 的终止条件应该还可以优化一下</p>
+
+    </div>
+</article>
+
+    </main>
+    <div class="footer">Copyright &copy;&nbsp;<a href="/">Mu001999</a>&nbsp;|&nbsp;<a href="http://www.miibeian.gov.cn/" target="_blank">京ICP备17013700号</a></div>
+
+</body>
+</html>
