@@ -121,7 +121,11 @@
 
             <script>
                 var html = document.getElementById('Memory Management in Rust');
-                $clamp(html, {clamp: 3});
+                if (navigator.userAgent.indexOf('AppleWebKit') != -1){
+                    $clamp(html, {clamp: 5, useNativeClamp: false});
+                } else {
+                    $clamp(html, {clamp: 5, useNativeClamp: true});
+                }
                 document.getElementById('Memory Management in Rust').value = html;
             </script>
         </div>
@@ -156,7 +160,11 @@
 
             <script>
                 var html = document.getElementById('一点点复制移动');
-                $clamp(html, {clamp: 3});
+                if (navigator.userAgent.indexOf('AppleWebKit') != -1){
+                    $clamp(html, {clamp: 5, useNativeClamp: false});
+                } else {
+                    $clamp(html, {clamp: 5, useNativeClamp: true});
+                }
                 document.getElementById('一点点复制移动').value = html;
             </script>
         </div>
@@ -215,7 +223,11 @@
 
             <script>
                 var html = document.getElementById('扯 C++ 里的 Lambda');
-                $clamp(html, {clamp: 3});
+                if (navigator.userAgent.indexOf('AppleWebKit') != -1){
+                    $clamp(html, {clamp: 5, useNativeClamp: false});
+                } else {
+                    $clamp(html, {clamp: 5, useNativeClamp: true});
+                }
                 document.getElementById('扯 C++ 里的 Lambda').value = html;
             </script>
         </div>
@@ -241,7 +253,11 @@
 
             <script>
                 var html = document.getElementById('C++ 实现 Parsec');
-                $clamp(html, {clamp: 3});
+                if (navigator.userAgent.indexOf('AppleWebKit') != -1){
+                    $clamp(html, {clamp: 5, useNativeClamp: false});
+                } else {
+                    $clamp(html, {clamp: 5, useNativeClamp: true});
+                }
                 document.getElementById('C++ 实现 Parsec').value = html;
             </script>
         </div>
@@ -264,7 +280,11 @@
 
             <script>
                 var html = document.getElementById('模板实现编译时冒泡排序');
-                $clamp(html, {clamp: 3});
+                if (navigator.userAgent.indexOf('AppleWebKit') != -1){
+                    $clamp(html, {clamp: 5, useNativeClamp: false});
+                } else {
+                    $clamp(html, {clamp: 5, useNativeClamp: true});
+                }
                 document.getElementById('模板实现编译时冒泡排序').value = html;
             </script>
         </div>
@@ -294,7 +314,11 @@
 
             <script>
                 var html = document.getElementById('通过 call-cc 给 Ice 实现 Coroutine');
-                $clamp(html, {clamp: 3});
+                if (navigator.userAgent.indexOf('AppleWebKit') != -1){
+                    $clamp(html, {clamp: 5, useNativeClamp: false});
+                } else {
+                    $clamp(html, {clamp: 5, useNativeClamp: true});
+                }
                 document.getElementById('通过 call-cc 给 Ice 实现 Coroutine').value = html;
             </script>
         </div>
@@ -362,7 +386,11 @@
 
             <script>
                 var html = document.getElementById('C++ 的 Copy Elision 导致的奇怪问题');
-                $clamp(html, {clamp: 3});
+                if (navigator.userAgent.indexOf('AppleWebKit') != -1){
+                    $clamp(html, {clamp: 5, useNativeClamp: false});
+                } else {
+                    $clamp(html, {clamp: 5, useNativeClamp: true});
+                }
                 document.getElementById('C++ 的 Copy Elision 导致的奇怪问题').value = html;
             </script>
         </div>

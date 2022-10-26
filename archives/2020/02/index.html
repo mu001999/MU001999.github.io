@@ -74,7 +74,11 @@
 
             <script>
                 var html = document.getElementById('通过 call-cc 给 Ice 实现 Coroutine');
-                $clamp(html, {clamp: 3});
+                if (navigator.userAgent.indexOf('AppleWebKit') != -1){
+                    $clamp(html, {clamp: 5, useNativeClamp: false});
+                } else {
+                    $clamp(html, {clamp: 5, useNativeClamp: true});
+                }
                 document.getElementById('通过 call-cc 给 Ice 实现 Coroutine').value = html;
             </script>
         </div>

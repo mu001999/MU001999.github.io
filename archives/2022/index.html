@@ -121,7 +121,11 @@
 
             <script>
                 var html = document.getElementById('Memory Management in Rust');
-                $clamp(html, {clamp: 3});
+                if (navigator.userAgent.indexOf('AppleWebKit') != -1){
+                    $clamp(html, {clamp: 5, useNativeClamp: false});
+                } else {
+                    $clamp(html, {clamp: 5, useNativeClamp: true});
+                }
                 document.getElementById('Memory Management in Rust').value = html;
             </script>
         </div>

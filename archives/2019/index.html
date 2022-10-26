@@ -112,7 +112,11 @@
 
             <script>
                 var html = document.getElementById('C++ 的 Copy Elision 导致的奇怪问题');
-                $clamp(html, {clamp: 3});
+                if (navigator.userAgent.indexOf('AppleWebKit') != -1){
+                    $clamp(html, {clamp: 5, useNativeClamp: false});
+                } else {
+                    $clamp(html, {clamp: 5, useNativeClamp: true});
+                }
                 document.getElementById('C++ 的 Copy Elision 导致的奇怪问题').value = html;
             </script>
         </div>
