@@ -199,24 +199,33 @@ body {
   font-weight: bold;
   text-decoration: none;
 }
-.posts .post-content {
-  margin-bottom: 1em;
-}
 .posts .post-content a {
   color: #616161;
   text-decoration: underline;
-}
-.posts .post-content .More {
-  padding: 1em 0;
 }
 .posts .post-meta {
   color: #818181;
 }
 .posts .post-pre {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  padding-top: 0.5em;
+}
+.posts .post-pre code,
+.posts .post-pre pre,
+.posts .post-pre figure {
+  display: none;
+}
+.posts .post-pre p {
+  margin: 0;
+}
+.posts .post-read-more {
+  padding-top: 0.5em;
+}
+.posts .post-read-more a {
+  color: #616161;
+  text-decoration: none;
+}
+.posts .post-read-more a:hover {
+  color: #111;
 }
 /* normalize.css v8.0.1 | MIT License | github.com/necolas/normalize.css */
 html {

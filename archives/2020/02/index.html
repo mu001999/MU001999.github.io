@@ -10,13 +10,14 @@
         href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/styles/vs.min.css">
     <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/highlight.min.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clamp-js@0.7.0/clamp.min.js"></script>
     
 <link rel="stylesheet" href="/css/font.css">
 
     
 <link rel="stylesheet" href="/css/style.css">
 
-  <meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="Seek the truth" type="application/atom+xml">
+<meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="Seek the truth" type="application/atom+xml">
 </head>
 
 <body>
@@ -59,7 +60,7 @@
         <div class="post-meta">
             <span class="post-time">February 24, 2020</span>
         </div>
-        <div class="post-pre">
+        <div class="post-pre" id="通过 call-cc 给 Ice 实现 Coroutine">
             <p>前两天给 Ice 加了 call/cc, 为此还重构了一波, 实现 call/cc 还是因为看了轮子哥的大专系列（</p>
 <p>里边说提供 continuation 语言实现 Coroutine 起来很轻松, 后来又查了一些资料, 都说 continuation 表达能力很强, 就实现了一手, 调用方式完全等同 call/cc, 既然是看 Coroutine 才要实现 call/cc, 那实现了之后当然要用 call/cc 实现一手 Coroutine 了(</p>
 <p>不过这个 Coroutine 比较简陋, 只提供 create, resume, yield, destroy</p>
@@ -71,9 +72,15 @@
 <p>里边唯一我觉得有点意思的地方是 resume 里, 直接在 lambda 里将当前的 continuation 绑定到 co_cont 上, 这样用户 create 的时候传入的函数就只需要调用 yield 了</p>
 <p>可惜除了 vsc 都没有 Ice 的高亮(</p>
 
+            <script>
+                var html = document.getElementById('通过 call-cc 给 Ice 实现 Coroutine');
+                $clamp(html, {clamp: 3});
+                document.getElementById('通过 call-cc 给 Ice 实现 Coroutine').value = html;
+            </script>
         </div>
-        <p>
-        <a class="post-title-link" href="/2020/02/24/%E9%80%9A%E8%BF%87%20call-cc%20%E7%BB%99%20Ice%20%E5%AE%9E%E7%8E%B0%20Coroutine/" style="text-decoration: none;">Read more --></a>
+        <div class="post-read-more">
+            <a href="/2020/02/24/%E9%80%9A%E8%BF%87%20call-cc%20%E7%BB%99%20Ice%20%E5%AE%9E%E7%8E%B0%20Coroutine/">Read More</a>
+        </div>
     </article>
     
 </section>

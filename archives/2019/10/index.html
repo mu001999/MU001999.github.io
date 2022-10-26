@@ -10,13 +10,14 @@
         href="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/styles/vs.min.css">
     <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@9.17.1/build/highlight.min.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/clamp-js@0.7.0/clamp.min.js"></script>
     
 <link rel="stylesheet" href="/css/font.css">
 
     
 <link rel="stylesheet" href="/css/style.css">
 
-  <meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="Seek the truth" type="application/atom+xml">
+<meta name="generator" content="Hexo 5.4.2"><link rel="alternate" href="/atom.xml" title="Seek the truth" type="application/atom+xml">
 </head>
 
 <body>
@@ -59,7 +60,7 @@
         <div class="post-meta">
             <span class="post-time">October 02, 2019</span>
         </div>
-        <div class="post-pre">
+        <div class="post-pre" id="C++ 的 Copy Elision 导致的奇怪问题">
             <p>最近写设计模式作业的时候, 有一个作业是实现<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Decorator_pattern">装饰器模式 (Decorator Pattern)</a>, 由于我不会 Java, 所以只能用 C++ 来实现 :)</p>
 <p>在这个背景下, 会有简单(表意)的几个类, 如下:</p>
 <figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs cpp"><span class="hljs-keyword">class</span> <span class="hljs-title class_">Base</span><br>&#123;<br>  <span class="hljs-keyword">public</span>:<br>    <span class="hljs-keyword">virtual</span> ~<span class="hljs-built_in">Base</span>() = <span class="hljs-number">0</span>;<br>    <span class="hljs-function"><span class="hljs-keyword">virtual</span> <span class="hljs-type">int</span> <span class="hljs-title">getData</span><span class="hljs-params">()</span> <span class="hljs-type">const</span> </span>= <span class="hljs-number">0</span>;<br>&#125;;<br><br><span class="hljs-keyword">inline</span> Base::~<span class="hljs-built_in">Base</span>() &#123;&#125;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">DerivedA</span> <span class="hljs-keyword">final</span> : <span class="hljs-keyword">public</span> Base<br>&#123;<br>  <span class="hljs-keyword">public</span>:<br>    <span class="hljs-built_in">DerivedA</span>(<span class="hljs-type">int</span> data) : <span class="hljs-built_in">data_</span>(data) &#123;&#125;<br>    <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">getData</span> <span class="hljs-params">()</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">    </span>&#123;<br>        <span class="hljs-keyword">return</span> data_;<br>    &#125;<br><br>  <span class="hljs-keyword">private</span>:<br>    <span class="hljs-type">const</span> <span class="hljs-type">int</span> data_;<br>&#125;;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">DerivedB</span> <span class="hljs-keyword">final</span> : <span class="hljs-keyword">public</span> Base<br>&#123;<br>  <span class="hljs-keyword">public</span>:<br>    <span class="hljs-built_in">DerivedB</span>(<span class="hljs-type">const</span> Base &amp;pre) : <span class="hljs-built_in">pre_</span>(pre) &#123;&#125;<br>    <span class="hljs-function"><span class="hljs-type">int</span> <span class="hljs-title">getData</span> <span class="hljs-params">()</span> <span class="hljs-type">const</span> <span class="hljs-keyword">override</span></span><br><span class="hljs-function">    </span>&#123;<br>        <span class="hljs-keyword">return</span> pre_.<span class="hljs-built_in">getData</span>() + <span class="hljs-number">1</span>;<br>    &#125;<br><br>  <span class="hljs-keyword">private</span>:<br>    <span class="hljs-type">const</span> Base &amp;pre_;<br>&#125;;<br></code></pre></td></tr></table></figure>
@@ -109,9 +110,15 @@
 <p>在此条件之下, 结果与预期相同, 完美解决问题:</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs plaintext">~&gt; clang++ -std=c++17 test.cpp -o test<br>~&gt; ./test<br>12<br></code></pre></td></tr></table></figure>
 
+            <script>
+                var html = document.getElementById('C++ 的 Copy Elision 导致的奇怪问题');
+                $clamp(html, {clamp: 3});
+                document.getElementById('C++ 的 Copy Elision 导致的奇怪问题').value = html;
+            </script>
         </div>
-        <p>
-        <a class="post-title-link" href="/2019/10/02/C++%20%E7%9A%84%20Copy%20Elision%20%E5%AF%BC%E8%87%B4%E7%9A%84%E5%A5%87%E6%80%AA%E9%97%AE%E9%A2%98/" style="text-decoration: none;">Read more --></a>
+        <div class="post-read-more">
+            <a href="/2019/10/02/C++%20%E7%9A%84%20Copy%20Elision%20%E5%AF%BC%E8%87%B4%E7%9A%84%E5%A5%87%E6%80%AA%E9%97%AE%E9%A2%98/">Read More</a>
+        </div>
     </article>
     
 </section>
