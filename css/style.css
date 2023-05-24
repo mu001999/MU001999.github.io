@@ -1,10 +1,11 @@
 body {
   background-color: #fff;
-  font-size: 16px;
+  font-size: 1em;
   line-height: 1.6em;
-  padding: 0 1.5em;
+  padding: 0;
   margin: 0 auto;
-  width: 1024px;
+  width: 100%;
+  max-width: 900px;
   word-break: break-word;
 }
 .header {
@@ -398,9 +399,4 @@ template {
 }
 [hidden] {
   display: none;
-}
-@media screen and (min-width: 320px) {
-  body {
-    font-size: calc(16px + 2 * ((100vw - 320px) / 960));
-  }
 }
